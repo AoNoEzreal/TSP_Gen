@@ -18,7 +18,6 @@ class path:
         self.length = length
     
     
-
 def init():
     nb = 0
     results = []
