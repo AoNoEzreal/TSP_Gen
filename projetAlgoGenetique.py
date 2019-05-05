@@ -9,6 +9,7 @@ import itertools
 import time
 import random
 import copy
+import matplotlib.pyplot as plt
 #faire les bébés et ajouter l'élite de la nation
 random.seed()
 class path:
@@ -18,22 +19,21 @@ class path:
         self.length = length
     
     
-
-def init():
+def init(file):
     nb = 0
     results = []
-    with open('data/test10.csv','r') as csvFile:
+    with open(file,'r') as csvFile:
         reader = csv.reader(csvFile)
         for row in reader:
             if(nb == 0):
-                nb += 1 # On convertit le premier element en entier
+                nb = int(row[0]) # On convertit le premier element en entier
             else :
                 results.append(row)
 
         for i in range(0,len(results)):
             for j in range(0,len(results[i])):
                 results[i][j] = float(results[i][j]) # On passe tout en float
-    return results
+    return nb,results
 
 def distance(x1,y1,x2,y2):
     #print('x1 = ',x1,' y1 = ', y1,' x2 = ', x2, ' y2 = ',y2)
@@ -79,7 +79,7 @@ def testPopulation(dists,population):
         #                                   distance serait nulle ( impossible sauf si tout les points sont superposés mais au cas ou)
         if(tot<best.length):
             best = population[i]
-    return best
+    return best,copy.deepcopy(population)
 
 def normalizeFitness(population): #On transforme notre critere en probabilité comprise entre 0 et 1
     maximum = max(path.fitness for path in population) 
@@ -139,10 +139,14 @@ def mutate(indiv,mutationRate):
         choosenOne.order[i1],choosenOne.order[i2] = choosenOne.order[i2],choosenOne.order[i1] #mutation basique pour l'instant
     return choosenOne
 
-# def mutatePopulation(population,mutationRate):
-#     mutatedPopulation = []
+def mutatePopulation(population,mutationRate):
+    mutatedPopulation = []
 
-#     for i in range(0,len):
+    for i in range(0,len(population)):
+        mutant = mutate(population[i],mutationRate)
+        mutatedPopulation.append(mutant)
+    
+    return mutatedPopulation
 
 
 def selection(population,eliteSize): #La population doit être triée par fitness au préalable
@@ -178,12 +182,66 @@ def breeding(p1,p2):
 
     return child
 
-# data = init()
-# population = populate(10,20)
-# initpop = copy.deepcopy(population)
-# combinaisons = (list(itertools.combinations(range(0,10),2)))
-# distMatrix = compute_Dist_Matrix(data,combinaisons)
 
+def breedPopulation(population,eliteSize):
+    children = []
+
+    length = len(population) - eliteSize
+    pool = random.sample(population,len(population))
+
+    for i in range(0,eliteSize):
+        children.append(copy.deepcopy(population[i])) #On ajoute les membres elites directement dans la génération suivante
+    
+    for i in range(0,length):
+        child = breeding(pool[i],pool[len(population)-i-1])
+        children.append(child)
+    return children
+
+def nextGen(currPopulation,eliteSize,mutationRate,distMatrix):
+    bestofGen,population = testPopulation(distMatrix,currPopulation)
+    normalizeFitness(population)
+    population = sortPopulation(population)
+    selected = selection(population,eliteSize)
+    children = breedPopulation(population,eliteSize)
+    nextGeneration = mutatePopulation(children,mutationRate)
+    return bestofGen,nextGeneration
+
+def geneticAlgo(popuSize,eliteSize,mutationRate,generations,file):
+    start = time.time()
+    nb,data = init(file)
+    population = populate(nb,popuSize)
+    initpop = copy.deepcopy(population)
+    combinaisons = (list(itertools.combinations(range(0,nb),2)))
+    distMatrix = compute_Dist_Matrix(data,combinaisons)
+    progress = []
+    for i in range(generations):
+        bestOfGen,population = nextGen(population,eliteSize,mutationRate,distMatrix)
+        progress.append(bestOfGen)
+
+    outputL = list(indiv.length for indiv in progress) 
+    last_order = progress[-1].order
+    for i in range(0,len(last_order)):
+        last_order[i] += 1
+    a = 1
+    last_order = [a] + last_order 
+    last_order.append(1)
+    print(last_order)  
+    end = time.time()
+    print(end-start)
+    plt.plot(outputL)
+    plt.ylabel('Distance')
+    plt.xlabel('Generations')
+    plt.show()
+
+    
+
+
+
+geneticAlgo(200,20,0.01,500,'data/data38.csv')
+
+
+# bestofGen,populationF = testPopulation(distMatrix,population)
+# print(min(path.length for path in populationF))
 # bestOfGen = []
 # for i in range(1000):
 #     best = testPopulation(distMatrix,population)
@@ -197,14 +255,14 @@ def breeding(p1,p2):
 
 
     
-testpop = []
+# testpop = []
 
-testpop.append(path([1,2,3,4,5,6,7,8,9],0.5,15))
-testpop.append(path([1,3,2,4,5,6,7,8,9],0.25,17))
-testpop.append(path([1,2,3,5,4,6,7,8,9],0.25,19))
+# testpop.append(path([1,2,3,4,5,6,7,8,9],0.5,15))
+# testpop.append(path([1,3,2,4,5,6,7,8,9],0.25,17))
+# testpop.append(path([1,2,3,5,4,6,7,8,9],0.25,19))
 
-child1 = breeding(testpop[0],testpop[1])
-print(child1.order)
+# child1 = breeding(testpop[0],testpop[1])
+# print(child1.order)
 # picked = []
 # for i in range(100):
 #     picked.append(mutate(pickOne(testpop),0.5))

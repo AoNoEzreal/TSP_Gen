@@ -37,7 +37,7 @@ def init():
     results = []
     nb =0
    
-    with open('data/test10.csv','r') as csvFile:
+    with open('data/test16.csv','r') as csvFile:
         reader = csv.reader(csvFile)
         for row in reader:
             if(nb == 0):
@@ -89,10 +89,10 @@ fact = math.factorial(nb - 1)
 permutations = list(itertools.permutations(range(1,nb-1)))
 
 
-permutations = permutations[:fact]
+#permutations = permutations[:fact]
 Length = len(permutations)/2
 permutations = permutations[:Length]
-combinaisons = (list(itertools.combinations(range(0,10),2)))
+combinaisons = (list(itertools.combinations(range(0,nb),2)))
 Dist_Matrix = compute_Dist_Matrix(data,combinaisons)  # Table contenant toutes les distances 
 # calc(permutations,data,len(data))
 
