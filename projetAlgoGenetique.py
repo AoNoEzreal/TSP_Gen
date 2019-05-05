@@ -2,19 +2,21 @@
 """
 Created on Thu May  2 10:13:51 2019
 
-@author: ybett
 """
 import csv
 import math
 import itertools
 import time
 import random
-
+import copy
+#faire les bébés et ajouter l'élite de la nation
+random.seed()
 class path:
     def __init__(self,order,fitness = 0,length=0):
-        self.order = order #Order represente le chemin I.E un tuple de chiffres uniques allant de 1 à n
-        self.fitness = fitness
+        self.order = order #Order represente le chemin I.E une liste de chiffres uniques allant de 1 à n
+        self.fitness = fitness # la fitness et 1/(1+length) plus la distance est grande plus la fitness est petite moins ce chemin a de chances d'être selectionné
         self.length = length
+    
     
 
 def init():
@@ -64,7 +66,7 @@ def testPopulation(dists,population):
     p1 = 0
     p2 = 0
     for i in range(0,len(population)):
-        first = population[i].order[0] # Le premier point (suivant le point 0)
+        first = population[i].order[0] # Le premier point (après le point 0)
         tot = 0
         for j in range(0,len(population[i].order)-1):
             p1 = population[i].order[j]
@@ -79,23 +81,23 @@ def testPopulation(dists,population):
             best = population[i]
     return best
 
-# def normaliseFitness(population): #pour donner plus de sens à notre critere on le rapporte à un nombre entre 0 et 1 
-#     somme = sum(path.fitness for path in population) #La somme de tous les criteres doit être égale à 1 donc on la calcule
+def normalizeFitness(population): #On transforme notre critere en probabilité comprise entre 0 et 1
+    maximum = max(path.fitness for path in population) 
     
-#     for i in range(0,len(population)):
-#         population[i].fitness = population[i].fitness/somme
+    for i in range(0,len(population)):
+        population[i].fitness = population[i].fitness/maximum
 
-def Pick(population):
+def Pick(population): # Ne fonctionne qu'avec une population >= 100
     somme = sum(path.fitness for path in population)
     # print(list(path.fitness for path in population))
     # print(math.floor(somme))
-    r = random.randrange(start=0,stop=math.ceil(somme))
+    r = random.randrange(start=0,stop=math.floor(somme))
     running_sum = 1
-
     for path in population:
         running_sum += path.fitness
         if r < running_sum:
-            return path
+            choosenOne = copy.deepcopy(path)
+            return choosenOne
 
 def permuts(nb): #Fonction qui initialise une liste contenant tout les chemins possibles là pour tester uniquement
     pop = []
@@ -104,67 +106,111 @@ def permuts(nb): #Fonction qui initialise une liste contenant tout les chemins p
         pop.append(path(perm))
     return pop
 
-# def pickOne(population):
-#     index = 0
-#     r = random.uniform(0,1)
-#     normaliseFitness(population)
-#     try:
-#         while (r > 0):
-#             #print(index)
-#             r = r - population[index].fitness # on va retirer la probabilité de l'element tiré 
-#             index +=1 
-#     except IndexError:
-#         print('error out of range ',index)
-#         print(list(path.fitness for path in population))
-#         print(r)
-#         exit()
-#     index -=1 # si on a trouvé le bon element, index est incrementé une fois de trop alors on décremente pour avoir le bon element
-#     return population[index]
+def pickOne(population):
+    index = 0
+    r = random.uniform(0,1)
+    #normaliseFitness(population)
+    try:
+        while (r > 0):
+            #print(index)
+            r = r - population[index].fitness # on va retirer la probabilité de l'element tiré 
+            index +=1 
+    except IndexError:
+        print('error out of range ',index)
+        print(list(path.fitness for path in population))
+        print(r)
+        exit()
+    index -=1 # si on a trouvé le bon element, index est incrementé une fois de trop alors on décremente pour avoir le bon element
+    choosenOne = copy.deepcopy(population[index])
+    return choosenOne
 
-def mutate(indiv):
-    idx = range (len(indiv.order))
-    i1,i2 = random.sample(idx,2)
-    indiv.order[i1],indiv.order[i2] = indiv.order[i2],indiv.order[i1] #mutation basique pour l'instant
-    return indiv
+def pickOneHatem(population):
+    r = random.uniform(0,1)
+    for indiv in population:
+        if indiv.fitness > r:
+            return indiv
 
-def nextGen(population):
+def mutate(indiv,mutationRate):
+    choosenOne = copy.deepcopy(indiv) #On évite les problemes de reférence
+    r = random.uniform(0,1)
+    if(r < mutationRate):
+        idx = range (len(choosenOne.order))
+        i1,i2 = random.sample(idx,2)
+        choosenOne.order[i1],choosenOne.order[i2] = choosenOne.order[i2],choosenOne.order[i1] #mutation basique pour l'instant
+    return choosenOne
+
+# def mutatePopulation(population,mutationRate):
+#     mutatedPopulation = []
+
+#     for i in range(0,len):
+
+
+def selection(population,eliteSize): #La population doit être triée par fitness au préalable
     newPopulation = []
-    for i in range(0,len(population)):
-        pick = Pick(population)
-        mutant = mutate(pick)
-        newPopulation.append(mutant)
+    for i in range(0,eliteSize):
+        eliteIndiv = copy.deepcopy(population[i])
+        newPopulation.append(eliteIndiv)
+    for i in range(0,len(population)-eliteSize):
+        pick = pickOne(population)
+        newPopulation.append(pick)
     return newPopulation
 
-# def sortPopulation(population):
-#     return sort
-start = time.time()
-data = init()
-#population = permuts(10)
-population = populate(10,1000)
-#print(list(path.order for path in population))
-combinaisons = (list(itertools.combinations(range(0,10),2)))
-distMatrix = compute_Dist_Matrix(data,combinaisons)
-# best = testPopulation(distMatrix,population)
-# normaliseFitness(population)
-# print(best.length)
-# print(best.order)
-# print(best.fitness)
-# newPop = nextGen(population)
-# best = testPopulation(distMatrix,newPop)
-# print(best.length)
-# print(best.order)
-# print(best.fitness)
+def sortPopulation(population):
+    return  sorted(population,key=lambda x: x.fitness,reverse = True)
 
-bestsOfGen = []
-for i in range(500):
-    #print(i)
-    best = testPopulation(distMatrix,population)
-    #normaliseFitness(population)
-    bestsOfGen.append(best.length)
-    newPop = nextGen(population)
-    population = newPop[:]
+def breeding(p1,p2):
+    child = path([0])
+    childP1 = []
+    childP2 = []
 
-print(min(bestsOfGen))
+    geneA = int(random.random() * len(p1.order))
+    geneB = int(random.random() * len(p2.order))
+
+    startGene = min(geneA, geneB)
+    endGene = max(geneA, geneB)
+
+    for i in range(startGene,endGene):
+        childP1.append(p1.order[i])
+    
+    childP2 = [gene for gene in p2.order if gene not in childP1]
+
+    child.order = childP1 + childP2
+
+    return child
+
+# data = init()
+# population = populate(10,20)
+# initpop = copy.deepcopy(population)
+# combinaisons = (list(itertools.combinations(range(0,10),2)))
+# distMatrix = compute_Dist_Matrix(data,combinaisons)
+
+# bestOfGen = []
+# for i in range(1000):
+#     best = testPopulation(distMatrix,population)
+#     normalizeFitness(population)
+#     bestOfGen.append(best.length)
+#     newPop = selection(population)
+#     # print(list(path.order for path in newPop))
+#     population = newPop[:]
+
+# print(min(bestOfGen))
 
 
-# for()
+    
+testpop = []
+
+testpop.append(path([1,2,3,4,5,6,7,8,9],0.5,15))
+testpop.append(path([1,3,2,4,5,6,7,8,9],0.25,17))
+testpop.append(path([1,2,3,5,4,6,7,8,9],0.25,19))
+
+child1 = breeding(testpop[0],testpop[1])
+print(child1.order)
+# picked = []
+# for i in range(100):
+#     picked.append(mutate(pickOne(testpop),0.5))
+
+# pickedL = list(indiv.length for indiv in picked)
+
+# print(pickedL.count(15))
+
+# print(list(p.order for p in picked))
