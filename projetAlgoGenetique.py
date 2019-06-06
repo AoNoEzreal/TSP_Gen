@@ -10,12 +10,13 @@ import time
 import random
 import copy
 import matplotlib.pyplot as plt
+import os
 #faire les bébés et ajouter l'élite de la nation
 random.seed()
 class path:
     def __init__(self,order,fitness = 0,length=0):
         self.order = order #Order represente le chemin I.E une liste de chiffres uniques allant de 1 à n
-        self.fitness = fitness # la fitness et 1/(1+length) plus la distance est grande plus la fitness est petite moins ce chemin a de chances d'être selectionné
+        self.fitness = fitness # la fitness est 1/(1+length) plus la distance est grande plus la fitness est petite moins ce chemin a de chances d'être selectionné
         self.length = length
     
     
@@ -87,7 +88,7 @@ def normalizeFitness(population): #On transforme notre critere en probabilité c
     for i in range(0,len(population)):
         population[i].fitness = population[i].fitness/maximum
 
-def Pick(population): # Ne fonctionne qu'avec une population >= 100
+def Pick(population): # Ne fonctionne qu'avec une population >= 100, ne pas utiliser
     somme = sum(path.fitness for path in population)
     # print(list(path.fitness for path in population))
     # print(math.floor(somme))
@@ -109,7 +110,6 @@ def permuts(nb): #Fonction qui initialise une liste contenant tout les chemins p
 def pickOne(population):
     index = 0
     r = random.uniform(0,1)
-    #normaliseFitness(population)
     try:
         while (r > 0):
             #print(index)
@@ -176,7 +176,7 @@ def breeding(p1,p2):
     for i in range(startGene,endGene):
         childP1.append(p1.order[i])
     
-    childP2 = [gene for gene in p2.order if gene not in childP1]
+    childP2 = [gene for gene in p2.order if gene not in childP1] #On recupere les genes du parent 2 qui n'ont pas été choisis dans le parent 1
 
     child.order = childP1 + childP2
 
@@ -202,7 +202,7 @@ def nextGen(currPopulation,eliteSize,mutationRate,distMatrix):
     normalizeFitness(population)
     population = sortPopulation(population)
     selected = selection(population,eliteSize)
-    children = breedPopulation(population,eliteSize)
+    children = breedPopulation(selected,eliteSize)
     nextGeneration = mutatePopulation(children,mutationRate)
     return bestofGen,nextGeneration
 
@@ -210,10 +210,11 @@ def geneticAlgo(popuSize,eliteSize,mutationRate,generations,file):
     start = time.time()
     nb,data = init(file)
     population = populate(nb,popuSize)
-    initpop = copy.deepcopy(population)
     combinaisons = (list(itertools.combinations(range(0,nb),2)))
     distMatrix = compute_Dist_Matrix(data,combinaisons)
     progress = []
+
+    
     for i in range(generations):
         bestOfGen,population = nextGen(population,eliteSize,mutationRate,distMatrix)
         progress.append(bestOfGen)
@@ -222,22 +223,29 @@ def geneticAlgo(popuSize,eliteSize,mutationRate,generations,file):
     last_order = progress[-1].order
     for i in range(0,len(last_order)):
         last_order[i] += 1
-    a = 1
-    last_order = [a] + last_order 
-    last_order.append(1)
+    last_order = [1] + last_order + [1]
+
     print(last_order)  
     end = time.time()
     print(end-start)
-    plt.plot(outputL)
-    plt.ylabel('Distance')
-    plt.xlabel('Generations')
-    plt.show()
+    print(outputL[-1]) 
+
+    # plt.plot(outputL)
+    # plt.ylabel('Distance')
+    # plt.xlabel('Generations')
+    # plt.show(block=False)
+    # last_order = str(last_order)
+    # last_order = last_order.strip('[]')
+    # last_order = last_order.replace(", ", "-")
+    # print("python plot.py "+str(file)+" "+last_order)
+    # os.system("python plot.py "+str(file)+" "+last_order)
+
 
     
 
 
 
-geneticAlgo(200,20,0.01,500,'data/data38.csv')
+geneticAlgo(100,10,0.10,200,'data/test16.csv')
 
 
 # bestofGen,populationF = testPopulation(distMatrix,population)

@@ -37,7 +37,7 @@ def init():
     results = []
     nb =0
    
-    with open('data/test16.csv','r') as csvFile:
+    with open('data/test10.csv','r') as csvFile:
         reader = csv.reader(csvFile)
         for row in reader:
             if(nb == 0):
@@ -86,7 +86,7 @@ res = []
 data = init()
 nb = len(data)
 fact = math.factorial(nb - 1)
-permutations = list(itertools.permutations(range(1,nb-1)))
+permutations = list(itertools.permutations(range(1,nb)))
 
 
 #permutations = permutations[:fact]
@@ -105,4 +105,4 @@ for i in range(Length):
 print(min(res))
 end = time.time()
 print(end-start)
-
+ 
