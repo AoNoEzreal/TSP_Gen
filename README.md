@@ -9,7 +9,7 @@ The second one is the genetic algorithm solution, for now i stuck with basic shu
 All of the data comes from [University of Waterloo's website](http://www.math.uwaterloo.ca/tsp/world/countries.html)
 
 ## Usage 
-Clone the repository and do 
+Clone the repository and run
 `python ProjetAlgoGenetique.py`
 
 
